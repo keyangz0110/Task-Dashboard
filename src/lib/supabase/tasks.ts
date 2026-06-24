@@ -1,6 +1,7 @@
 import { createClient } from '$lib/supabase/client';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import type { Locale } from '$lib/i18n';
 import type { Profile, RoutineFrequency, SortDirection, SortField, Task, TaskCategory, TaskFormData, TaskKind, UserRole, WorkView } from './types';
 
 function routineFieldsFromForm(form: Pick<TaskFormData, 'task_kind' | 'routine_frequency'>) {
@@ -47,6 +48,26 @@ export async function createCategory(userId: string, name: string): Promise<Task
 		.single();
 	if (error) throw error;
 	return data as TaskCategory;
+}
+
+export async function updateCategory(categoryId: string, name: string): Promise<TaskCategory> {
+	const supabase = createClient();
+	const trimmed = name.trim();
+	if (!trimmed) throw new Error('Category Name is Required');
+	const { data, error } = await supabase
+		.from('task_categories')
+		.update({ name: trimmed })
+		.eq('id', categoryId)
+		.select('*')
+		.single();
+	if (error) throw error;
+	return data as TaskCategory;
+}
+
+export async function deleteCategory(categoryId: string): Promise<void> {
+	const supabase = createClient();
+	const { error } = await supabase.from('task_categories').delete().eq('id', categoryId);
+	if (error) throw error;
 }
 
 export async function fetchProfilesFor(supabase: TaskSupabase): Promise<Profile[]> {
@@ -212,7 +233,7 @@ export function groupTasksForDashboard(tasks: Task[]) {
 	return { open, todayTasks };
 }
 
-export async function updateProfile(userId: string, displayName: string, preferredLocale: 'en' | 'zh') {
+export async function updateProfile(userId: string, displayName: string, preferredLocale: Locale) {
 	const supabase = createClient();
 	const { error } = await supabase
 		.from('profiles')

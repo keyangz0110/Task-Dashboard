@@ -8,11 +8,13 @@ export type SortField = 'priority_score' | 'due_date' | 'created_at';
 export type SortDirection = 'asc' | 'desc';
 export type AssignmentType = 'myself' | 'delegate';
 
+import type { Locale } from '$lib/i18n';
+
 export interface Profile {
 	id: string;
 	display_name: string;
 	avatar_url: string | null;
-	preferred_locale: 'en' | 'zh';
+	preferred_locale: Locale;
 	role: UserRole;
 	created_at: string;
 	updated_at: string;

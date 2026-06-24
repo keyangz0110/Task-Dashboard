@@ -94,3 +94,8 @@ body {
 [data-bits-menubar-content] {
 	z-index: 50;
 }
+
+/* SvelteKit mount wrapper — display:contents avoids an extra layout box */
+.sveltekit-body {
+	display: contents;
+}

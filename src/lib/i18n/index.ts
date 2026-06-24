@@ -1,9 +1,10 @@
 import en from './en.json';
+import es from './es.json';
 import zh from './zh.json';
 
-export type Locale = 'en' | 'zh';
+export type Locale = 'en' | 'zh' | 'es';
 
-const dictionaries = { en, zh } as const;
+const dictionaries = { en, zh, es } as const;
 
 export type TranslationKey = keyof typeof en;
 
@@ -22,4 +23,4 @@ export function taskCountLabel(locale: Locale, count: number) {
 	return t(locale, key, { count });
 }
 
-export { en, zh };
+export { en, es, zh };
