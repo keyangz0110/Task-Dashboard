@@ -1,0 +1,5 @@
+{
+	"rewrites": [
+		{ "source": "/api/generate-weekly-report", "destination": "/api/generate_weekly_report.py" }
+	]
+}
