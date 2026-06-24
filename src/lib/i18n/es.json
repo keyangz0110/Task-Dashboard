@@ -78,6 +78,7 @@
 	"nextMonth": "Mes siguiente",
 	"generateReport": "Generar reporte semanal",
 	"weeklyReport": "Reporte semanal",
+	"reportLanguage": "Idioma del reporte",
 	"copyReport": "Copiar reporte",
 	"reportCopied": "Reporte copiado",
 	"generating": "Generando...",

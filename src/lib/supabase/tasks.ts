@@ -256,8 +256,22 @@ export async function generateWeeklyReport(
 		body: JSON.stringify({ week_start: weekStart, locale })
 	});
 	if (!response.ok) {
-		const body = await response.json().catch(() => ({}));
-		throw new Error(body.detail ?? 'Failed to Generate Report');
+		const text = await response.text();
+		let detail = 'Failed to Generate Report';
+		try {
+			const body = JSON.parse(text) as { detail?: string | Array<{ msg?: string }> };
+			if (typeof body.detail === 'string') {
+				detail = body.detail;
+			} else if (Array.isArray(body.detail)) {
+				detail = body.detail.map((item) => item.msg).filter(Boolean).join(', ') || detail;
+			}
+		} catch {
+			if (response.status === 404 || response.status === 502) {
+				detail =
+					'Report API is unavailable. Run `npm run dev:api` in a second terminal while using `npm run dev`.';
+			}
+		}
+		throw new Error(detail);
 	}
 	return response.json();
 }

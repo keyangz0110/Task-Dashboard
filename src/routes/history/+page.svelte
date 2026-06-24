@@ -3,8 +3,9 @@
 	import HistoryCalendar from '$lib/components/HistoryCalendar.svelte';
 	import ReportModal from '$lib/components/ReportModal.svelte';
 	import { locale } from '$lib/stores/locale';
-	import { t } from '$lib/i18n';
+	import { t, type Locale } from '$lib/i18n';
 	import { generateWeeklyReport } from '$lib/supabase/tasks';
+	import { createClient } from '$lib/supabase/client';
 	import { isSupervisor } from '$lib/supabase/roles';
 	import { FileBarChart } from '@lucide/svelte';
 	import type { PageData } from './$types';
@@ -14,6 +15,8 @@
 	let reportRangeStart = $state('');
 	let reportOpen = $state(false);
 	let report = $state('');
+	let reportLocale = $state<Locale>('en');
+
 	let reportLoading = $state(false);
 
 	const supervisor = $derived(isSupervisor(data.profile?.role));
@@ -21,9 +24,14 @@
 	async function handleGenerateReport() {
 		reportLoading = true;
 		try {
-			const accessToken = data.session?.access_token;
+			const supabase = createClient();
+			const {
+				data: { session }
+			} = await supabase.auth.getSession();
+			const accessToken = session?.access_token;
 			if (!accessToken) throw new Error(t($locale, 'notAuthenticated'));
-			const result = await generateWeeklyReport(reportRangeStart, $locale, accessToken);
+			if (!reportRangeStart) throw new Error(t($locale, 'reportGenerateFailed'));
+			const result = await generateWeeklyReport(reportRangeStart, reportLocale, accessToken);
 			report = result.report;
 		} catch (err) {
 			report = err instanceof Error ? err.message : t($locale, 'reportGenerateFailed');
@@ -57,6 +65,7 @@
 {#if supervisor}
 	<ReportModal
 		bind:open={reportOpen}
+		bind:reportLocale
 		{report}
 		loading={reportLoading}
 		onClose={() => (reportOpen = false)}

@@ -3,6 +3,7 @@ node_modules
 # Output
 .output
 .vercel
+.venv-api
 .netlify
 .wrangler
 /.svelte-kit
@@ -24,3 +25,6 @@ vite.config.ts.timestamp-*
 
 # Supabase
 supabase/migrations/
+
+# Python
+__pycache__/

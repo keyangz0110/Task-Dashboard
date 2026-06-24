@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
+		"dev:api": ".venv-api/bin/python -m uvicorn generate_weekly_report:app --app-dir api --host 127.0.0.1 --port 8000 --reload",
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",

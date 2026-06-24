@@ -1,15 +1,32 @@
-import json
 import os
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import httpx
 import jwt
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from jwt import PyJWKClient
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
 from pydantic import BaseModel
 from supabase import create_client
+
+
+def _load_env_file() -> None:
+	if os.getenv("VERCEL"):
+		return
+	try:
+		from dotenv import load_dotenv
+	except ImportError:
+		return
+	root = Path(__file__).resolve().parent.parent
+	load_dotenv(root / ".env")
+
+
+_load_env_file()
 
 app = FastAPI()
 
@@ -20,6 +37,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(_request, exc: RequestValidationError):
+	return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_request, exc: HTTPException):
+	return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_request, exc: Exception):
+	return JSONResponse(status_code=500, content={"detail": str(exc)})
 
 
 class ReportRequest(BaseModel):
@@ -70,11 +102,12 @@ def verify_jwt(authorization: str | None) -> str:
 
 
 def duration_label(duration_type: str, locale: str) -> str:
-    labels = {
-        "en": {"short": "Short", "medium": "Medium", "long": "Long"},
-        "zh": {"short": "短", "medium": "中", "long": "长"},
-    }
-    return labels.get(locale, labels["en"]).get(duration_type, duration_type)
+	labels = {
+		"en": {"short": "Short", "medium": "Medium", "long": "Long"},
+		"zh": {"short": "短", "medium": "中", "long": "长"},
+		"es": {"short": "Corta", "medium": "Media", "long": "Larga"},
+	}
+	return labels.get(locale, labels["en"]).get(duration_type, duration_type)
 
 
 def build_prompt(tasks: list[dict[str, Any]], locale: str, week_start: str) -> str:
@@ -93,6 +126,13 @@ def build_prompt(tasks: list[dict[str, Any]], locale: str, week_start: str) -> s
             f"请根据以下在 {week_start} 至 {week_end} 期间完成的任务，"
             f"撰写一份专业的中文周报。包含：本周完成事项、关键产出、遇到的阻碍、下周建议。\n\n"
             f"任务列表：\n{task_block}"
+        )
+    if locale == "es":
+        return (
+            f"Genera un reporte semanal profesional del trabajo completado "
+            f"del {week_start} al {week_end}. Incluye: logros, entregables clave, "
+            f"obstáculos y sugerencias para la próxima semana.\n\n"
+            f"Tareas:\n{task_block}"
         )
     return (
         f"Generate a professional weekly workplace report for completed work "
@@ -136,9 +176,18 @@ async def call_llm(prompt: str) -> str:
         }
 
     async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.post(url, headers=headers, json=body)
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = await client.post(url, headers=headers, json=body)
+            response.raise_for_status()
+            data = response.json()
+        except httpx.HTTPStatusError as exc:
+            detail = exc.response.text[:300] if exc.response is not None else str(exc)
+            raise HTTPException(
+                status_code=502,
+                detail=f"LLM request failed ({exc.response.status_code}): {detail}",
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=f"LLM request failed: {exc}") from exc
 
     if provider == "gemini":
         return data["candidates"][0]["content"]["parts"][0]["text"]
@@ -169,16 +218,19 @@ async def generate_weekly_report(
     prompt = build_prompt(tasks, data.locale, data.week_start)
     report = await call_llm(prompt)
 
-    supabase.table("weekly_reports").upsert(
-        {
-            "user_id": user_id,
-            "week_start": data.week_start,
-            "content": report,
-        },
-        on_conflict="user_id,week_start",
-    ).execute()
+    try:
+        supabase.table("weekly_reports").upsert(
+            {
+                "user_id": user_id,
+                "week_start": data.week_start,
+                "content": report,
+            },
+            on_conflict="user_id,week_start",
+        ).execute()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to save report: {exc}") from exc
 
     return {"report": report, "task_count": len(tasks)}
 
 
-handler = app
+handler = Mangum(app, lifespan="off")

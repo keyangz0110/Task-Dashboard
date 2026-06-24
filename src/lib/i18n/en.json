@@ -78,6 +78,7 @@
 	"nextMonth": "Next month",
 	"generateReport": "Generate Weekly Report",
 	"weeklyReport": "Weekly Report",
+	"reportLanguage": "Report Language",
 	"copyReport": "Copy Report",
 	"reportCopied": "Report Copied",
 	"generating": "Generating...",

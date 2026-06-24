@@ -78,6 +78,7 @@
 	"nextMonth": "下个月",
 	"generateReport": "生成周报",
 	"weeklyReport": "周报",
+	"reportLanguage": "报告语言",
 	"copyReport": "复制周报",
 	"reportCopied": "已复制",
 	"generating": "生成中...",
