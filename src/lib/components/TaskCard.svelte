@@ -5,9 +5,10 @@
 	import { locale } from '$lib/stores/locale';
 	import { t } from '$lib/i18n';
 	import { formatDate } from '$lib/utils/dates';
+	import { taskStatusIcons } from '$lib/utils/task-status';
 	import type { DurationType, RoutineFrequency, Task, TaskStatus } from '$lib/supabase/types';
 	import type { TranslationKey } from '$lib/i18n';
-	import { Calendar, Clock, Pencil, Trash2, User } from '@lucide/svelte';
+	import { Calendar, Clock, ListTodo, Pencil, Trash2, User } from '@lucide/svelte';
 
 	interface Props {
 		task: Task;
@@ -49,7 +50,8 @@
 	const statusItems = $derived(
 		(['todo', 'in_progress', 'done'] as TaskStatus[]).map((status) => ({
 			value: status,
-			label: t($locale, statusLabels[status])
+			label: t($locale, statusLabels[status]),
+			icon: taskStatusIcons[status]
 		}))
 	);
 
@@ -66,7 +68,7 @@
 			: t($locale, 'routine')
 	);
 
-	const showStatusControl = $derived(Boolean(onStatusChange && (!canManage || mobile)));
+	const showStatusControl = $derived(Boolean(onStatusChange));
 </script>
 
 <article class="rounded-xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
@@ -124,12 +126,17 @@
 	{/if}
 
 	{#if showStatusControl && onStatusChange}
-		<SelectField
-			class="mt-3"
-			value={task.status}
-			items={statusItems}
-			onValueChange={(value) => onStatusChange(task, value as TaskStatus)}
-			aria-label={t($locale, 'status')}
-		/>
+		<div class="mt-3 space-y-1">
+			<p class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+				<ListTodo class="h-3.5 w-3.5" aria-hidden="true" />
+				{t($locale, 'status')}
+			</p>
+			<SelectField
+				value={task.status}
+				items={statusItems}
+				onValueChange={(value) => onStatusChange(task, value as TaskStatus)}
+				aria-label={t($locale, 'status')}
+			/>
+		</div>
 	{/if}
 </article>

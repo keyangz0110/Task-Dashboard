@@ -79,6 +79,7 @@
 	"needAccount": "Need an Account?",
 	"loading": "Loading...",
 	"taskCount": "{count} Tasks",
+	"taskCountOne": "{count} Task",
 	"openTasksToday": "Today's Focus",
 	"todaysFocusSubtitle": "Open tasks due today",
 	"todaysFocusEmpty": "Nothing due today. You're all clear!",

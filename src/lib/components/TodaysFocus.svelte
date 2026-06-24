@@ -2,7 +2,7 @@
 	import TaskCard from '$lib/components/TaskCard.svelte';
 	import Badge from '$lib/components/ui/badge.svelte';
 	import { locale } from '$lib/stores/locale';
-	import { t } from '$lib/i18n';
+	import { t, taskCountLabel } from '$lib/i18n';
 	import type { Task, TaskStatus } from '$lib/supabase/types';
 	import { Sparkles } from '@lucide/svelte';
 
@@ -49,7 +49,7 @@
 						{t($locale, 'openTasksToday')}
 					</h2>
 					<Badge variant="status" class="bg-primary/15 text-primary">
-						{t($locale, 'taskCount', { count: tasks.length })}
+						{taskCountLabel($locale, tasks.length)}
 					</Badge>
 				</div>
 				<p class="mt-1 text-sm text-muted-foreground">{t($locale, 'todaysFocusSubtitle')}</p>

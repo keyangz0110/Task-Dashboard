@@ -235,7 +235,7 @@
 
 				<div class="space-y-2">
 					<FieldLabel for="due" icon={Calendar}>{t($locale, 'dueDate')}</FieldLabel>
-					<DatePickerField id="due" bind:value={form.due_date} locale={$locale} />
+					<DatePickerField id="due" bind:value={form.due_date} locale={$locale} inline />
 				</div>
 
 				<fieldset class="space-y-2">

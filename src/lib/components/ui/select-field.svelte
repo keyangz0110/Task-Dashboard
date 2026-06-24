@@ -2,11 +2,13 @@
 	import { Select } from 'bits-ui';
 	import { cn } from '$lib/utils/cn';
 	import { Check, ChevronDown } from '@lucide/svelte';
+	import type { Component } from 'svelte';
 
 	export interface SelectFieldItem {
 		value: string;
 		label: string;
 		disabled?: boolean;
+		icon?: Component;
 	}
 
 	interface Props {
@@ -49,6 +51,8 @@
 
 	const itemClass =
 		'relative flex cursor-default select-none items-center gap-2 rounded-md px-3 py-2 text-sm outline-none data-[highlighted]:bg-accent data-[disabled]:pointer-events-none data-[disabled]:opacity-50';
+
+	const selectedItem = $derived(items.find((item) => item.value === value));
 </script>
 
 <Select.Root
@@ -61,6 +65,10 @@
 	{onValueChange}
 >
 	<Select.Trigger {id} aria-label={ariaLabel} class={triggerClass}>
+		{#if selectedItem?.icon}
+			{@const ItemIcon = selectedItem.icon}
+			<ItemIcon class="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+		{/if}
 		<Select.Value {placeholder} class="flex-1 truncate text-left" />
 		<ChevronDown class="h-4 w-4 shrink-0 opacity-60" aria-hidden="true" />
 	</Select.Trigger>
@@ -69,6 +77,10 @@
 			{#each items as item (item.value)}
 				<Select.Item value={item.value} label={item.label} disabled={item.disabled} class={itemClass}>
 					{#snippet children({ selected })}
+						{#if item.icon}
+							{@const ItemIcon = item.icon}
+							<ItemIcon class="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+						{/if}
 						<span class="flex-1">{item.label}</span>
 						{#if selected}
 							<Check class="h-4 w-4 text-primary" aria-hidden="true" />

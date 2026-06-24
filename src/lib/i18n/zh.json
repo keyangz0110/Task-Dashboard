@@ -79,6 +79,7 @@
 	"needAccount": "需要账号？",
 	"loading": "加载中...",
 	"taskCount": "{count} 个任务",
+	"taskCountOne": "{count} 个任务",
 	"openTasksToday": "今日重点",
 	"todaysFocusSubtitle": "今日到期的未完成任务",
 	"todaysFocusEmpty": "今天没有到期任务，可以放松一下！",

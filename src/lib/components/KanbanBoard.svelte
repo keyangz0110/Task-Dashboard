@@ -3,8 +3,10 @@
 	import { flip } from 'svelte/animate';
 	import TaskCard from '$lib/components/TaskCard.svelte';
 	import { locale } from '$lib/stores/locale';
-	import { t, type TranslationKey } from '$lib/i18n';
+	import { t, taskCountLabel, type TranslationKey } from '$lib/i18n';
+	import { CircleDot, Repeat } from '@lucide/svelte';
 	import type { Task, TaskStatus } from '$lib/supabase/types';
+	import { taskStatusIcons } from '$lib/utils/task-status';
 
 	interface Props {
 		isRoutine: boolean;
@@ -66,19 +68,29 @@
 </script>
 
 <section class="space-y-4">
-	<h2 class="text-xl font-semibold">
-		{t($locale, isRoutine ? 'dailyRoutines' : 'temporary')}
+	<h2 class="inline-flex items-center gap-2 text-xl font-semibold">
+		{#if isRoutine}
+			<Repeat class="h-5 w-5 text-primary" aria-hidden="true" />
+			{t($locale, 'routine')}
+		{:else}
+			<CircleDot class="h-5 w-5 text-primary" aria-hidden="true" />
+			{t($locale, 'oneTime')}
+		{/if}
 	</h2>
 
 	<div class="grid gap-4 lg:grid-cols-3">
 		{#each columns as status (status)}
+			{@const StatusIcon = taskStatusIcons[status]}
 			<div
 				class="rounded-xl border border-border bg-muted/30 border-t-4 {statusColors[status]} min-h-[280px]"
 			>
 				<div class="border-b border-border px-4 py-3">
-					<h3 class="font-medium">{t($locale, statusLabels[status])}</h3>
+					<h3 class="inline-flex items-center gap-2 font-medium">
+						<StatusIcon class="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+						{t($locale, statusLabels[status])}
+					</h3>
 					<p class="text-xs text-muted-foreground">
-						{t($locale, 'taskCount', { count: columnItems[status].length })}
+						{taskCountLabel($locale, columnItems[status].length)}
 					</p>
 				</div>
 
@@ -109,7 +121,14 @@
 					>
 						{#each columnItems[status] as task (task.id)}
 							<div animate:flip={{ duration: 200 }}>
-								<TaskCard {task} {currentUserId} {canManage} {onEdit} {onDelete} />
+								<TaskCard
+									{task}
+									{currentUserId}
+									{canManage}
+									{onEdit}
+									{onDelete}
+									onStatusChange={(item, next) => onStatusChange(item.id, next)}
+								/>
 							</div>
 						{/each}
 					</div>

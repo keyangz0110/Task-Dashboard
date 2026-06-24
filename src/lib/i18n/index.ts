@@ -17,4 +17,9 @@ export function t(locale: Locale, key: TranslationKey, vars?: Record<string, str
 	return text;
 }
 
+export function taskCountLabel(locale: Locale, count: number) {
+	const key: TranslationKey = count === 1 ? 'taskCountOne' : 'taskCount';
+	return t(locale, key, { count });
+}
+
 export { en, zh };
