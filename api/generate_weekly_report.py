@@ -6,6 +6,7 @@ from typing import Any
 import httpx
 import jwt
 from fastapi import FastAPI, Header, HTTPException
+from jwt import PyJWKClient
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from supabase import create_client
@@ -34,15 +35,35 @@ def get_supabase():
     return create_client(url, key)
 
 
+_jwks_client: PyJWKClient | None = None
+
+
+def get_jwks_client() -> PyJWKClient:
+    global _jwks_client
+    if _jwks_client is None:
+        url = os.environ.get("SUPABASE_URL") or os.environ.get("PUBLIC_SUPABASE_URL")
+        if not url:
+            raise HTTPException(status_code=500, detail="Supabase URL Not Configured")
+        _jwks_client = PyJWKClient(f"{url.rstrip('/')}/auth/v1/.well-known/jwks.json")
+    return _jwks_client
+
+
 def verify_jwt(authorization: str | None) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing Authorization")
     token = authorization.split(" ", 1)[1]
-    secret = os.environ.get("SUPABASE_JWT_SECRET")
-    if not secret:
-        raise HTTPException(status_code=500, detail="JWT Secret Not Configured")
+    url = os.environ.get("SUPABASE_URL") or os.environ.get("PUBLIC_SUPABASE_URL")
+    if not url:
+        raise HTTPException(status_code=500, detail="Supabase URL Not Configured")
     try:
-        payload = jwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
+        signing_key = get_jwks_client().get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["ES256", "RS256", "HS256"],
+            audience="authenticated",
+            issuer=f"{url.rstrip('/')}/auth/v1",
+        )
         return payload["sub"]
     except jwt.PyJWTError as exc:
         raise HTTPException(status_code=401, detail="Invalid Token") from exc
