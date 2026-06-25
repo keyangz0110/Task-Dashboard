@@ -81,9 +81,11 @@
 				</div>
 
 				{#if report}
-					<pre
+					<div
 						class="whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 text-sm leading-relaxed"
-					>{report}</pre>
+					>
+						{report}
+					</div>
 					<Button variant="secondary" onclick={copyReport}>
 						{copied ? t($locale, 'reportCopied') : t($locale, 'copyReport')}
 					</Button>

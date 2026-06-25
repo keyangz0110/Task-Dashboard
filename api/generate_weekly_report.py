@@ -110,6 +110,26 @@ def duration_label(duration_type: str, locale: str) -> str:
 	return labels.get(locale, labels["en"]).get(duration_type, duration_type)
 
 
+def report_format_instructions(locale: str) -> str:
+	if locale == "zh":
+		return (
+			"格式要求：仅使用纯文本，不要使用 Markdown（不要用 #、**、*、_ 等标记）。"
+			"每个板块先写一段自然的叙述性段落，再用「•」开头的要点列表补充细节。"
+			"板块之间空一行，语言简洁专业。"
+		)
+	if locale == "es":
+		return (
+			"Formato: solo texto plano, sin Markdown (sin #, **, *, _, etc.). "
+			"Para cada sección, escribe primero un párrafo narrativo natural y luego "
+			"viñetas con «•» para los detalles. Deja una línea en blanco entre secciones."
+		)
+	return (
+		"Format: plain text only — no Markdown (no #, **, *, _, etc.). "
+		"For each section, write a natural narrative paragraph first, then bullet points "
+		"starting with «•» for details. Leave a blank line between sections."
+	)
+
+
 def build_prompt(tasks: list[dict[str, Any]], locale: str, week_start: str) -> str:
     week_end = (datetime.fromisoformat(week_start) + timedelta(days=6)).date().isoformat()
     lines = []
@@ -120,11 +140,13 @@ def build_prompt(tasks: list[dict[str, Any]], locale: str, week_start: str) -> s
             f"completed: {task.get('completed_at', '')}"
         )
     task_block = "\n".join(lines) if lines else "(no completed tasks)"
+    format_block = report_format_instructions(locale)
 
     if locale == "zh":
         return (
             f"请根据以下在 {week_start} 至 {week_end} 期间完成的任务，"
             f"撰写一份专业的中文周报。包含：本周完成事项、关键产出、遇到的阻碍、下周建议。\n\n"
+            f"{format_block}\n\n"
             f"任务列表：\n{task_block}"
         )
     if locale == "es":
@@ -132,12 +154,15 @@ def build_prompt(tasks: list[dict[str, Any]], locale: str, week_start: str) -> s
             f"Genera un reporte semanal profesional del trabajo completado "
             f"del {week_start} al {week_end}. Incluye: logros, entregables clave, "
             f"obstáculos y sugerencias para la próxima semana.\n\n"
+            f"{format_block}\n\n"
             f"Tareas:\n{task_block}"
         )
     return (
         f"Generate a professional weekly workplace report for completed work "
         f"from {week_start} to {week_end}. Include: accomplishments, key deliverables, "
-        f"blockers, and suggestions for next week.\n\nTasks:\n{task_block}"
+        f"blockers, and suggestions for next week.\n\n"
+        f"{format_block}\n\n"
+        f"Tasks:\n{task_block}"
     )
 
 
