@@ -182,6 +182,14 @@ async def call_llm(prompt: str) -> str:
             data = response.json()
         except httpx.HTTPStatusError as exc:
             detail = exc.response.text[:300] if exc.response is not None else str(exc)
+            if exc.response is not None and exc.response.status_code in (401, 403):
+                raise HTTPException(
+                    status_code=502,
+                    detail=(
+                        f"LLM provider rejected LLM_API_KEY ({exc.response.status_code}). "
+                        "Check the key, provider (LLM_PROVIDER), and model (LLM_MODEL) in your environment."
+                    ),
+                ) from exc
             raise HTTPException(
                 status_code=502,
                 detail=f"LLM request failed ({exc.response.status_code}): {detail}",
@@ -204,16 +212,28 @@ async def generate_weekly_report(
     week_end = week_start + timedelta(days=7)
 
     supabase = get_supabase()
-    result = (
-        supabase.table("tasks")
-        .select("*")
-        .eq("assigned_to", user_id)
-        .eq("status", "done")
-        .gte("completed_at", week_start.isoformat())
-        .lt("completed_at", week_end.isoformat())
-        .order("completed_at")
-        .execute()
-    )
+    try:
+        result = (
+            supabase.table("tasks")
+            .select("*")
+            .eq("assigned_to", user_id)
+            .eq("status", "done")
+            .gte("completed_at", week_start.isoformat())
+            .lt("completed_at", week_end.isoformat())
+            .order("completed_at")
+            .execute()
+        )
+    except Exception as exc:
+        message = str(exc)
+        if "invalid api key" in message.lower():
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Supabase rejected SUPABASE_SERVICE_ROLE_KEY. Use a secret key (sb_secret_...) "
+                    "from Project Settings → API, and ensure supabase-py is up to date (>=2.16.0)."
+                ),
+            ) from exc
+        raise HTTPException(status_code=500, detail=f"Failed to load tasks: {message}") from exc
     tasks = result.data or []
     prompt = build_prompt(tasks, data.locale, data.week_start)
     report = await call_llm(prompt)

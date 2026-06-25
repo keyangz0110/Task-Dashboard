@@ -24,11 +24,20 @@ A bilingual task kanban dashboard built with SvelteKit 5, Bits UI v2, Supabase, 
 
 ```bash
 cp .env.example .env
-# Fill in PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_PUBLISHABLE_KEY
+# Fill in PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, and server keys below
 
 npm install
+python3 -m venv .venv-api
+.venv-api/bin/pip install -r api/requirements.txt
+
+# Terminal 1
+npm run dev:api
+
+# Terminal 2
 npm run dev
 ```
+
+Server-only variables in `.env` (`SUPABASE_SERVICE_ROLE_KEY`, `LLM_*`) are read by the Python API. Restart `npm run dev:api` after changing them.
 
 ### 3. Vercel deployment
 
@@ -38,8 +47,8 @@ Set these environment variables in the Vercel dashboard:
 |----------|-------------|
 | `PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key (Project Settings → API) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (Python API only) |
-| `SUPABASE_JWT_SECRET` | JWT secret for token verification |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret key (`sb_secret_...`) from Project Settings → API (Python API only) |
+| `SUPABASE_JWT_SECRET` | Not required — JWT verification uses JWKS from `PUBLIC_SUPABASE_URL` |
 | `LLM_API_KEY` | OpenAI / DeepSeek / Gemini API key |
 | `LLM_PROVIDER` | `openai`, `deepseek`, or `gemini` |
 | `LLM_MODEL` | Model name (e.g. `gpt-4o-mini`) |
